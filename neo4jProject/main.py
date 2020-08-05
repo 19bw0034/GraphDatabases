@@ -20,18 +20,22 @@ class HelloWorldExample(object):
                         "RETURN a.message + ', from node ' + id(a)", message=message)
         return result.single()[0]
 
-    def run_query(self, year):
+    def run_query(self, query, **kwargs):
+        def _query_function(tx, **kwargs2):
+            result = tx.run(query, **kwargs2)
+            return result.data()
         with self._driver.session() as session:
-            greeting = session.write_transaction(self._query_movies_by_year, year)
-            print(greeting)
+            result = session.write_transaction(_query_function, **kwargs)
+            print(result)
 
     @staticmethod
     def _query_movies_by_year(tx, year):
         result = tx.run("MATCH (a:Movie) WHERE a.released = $year RETURN a.title", year=year)
         return result.data()
 
-#MATCH (a:Movie) WHERE a.released = 1992 RETURN a
-
 
 example = HelloWorldExample("neo4j://localhost:7687", "neo4j", "neo4j")
-example.run_query(1992)
+example.run_query("MATCH (a:Movie) WHERE a.released = $year RETURN a.title", year=1992)
+
+
+#"MATCH (a:Movie) WHERE a.released = $year RETURN a.title", year=year
