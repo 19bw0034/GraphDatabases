@@ -1,4 +1,5 @@
 from neo4j import GraphDatabase
+import time
 
 
 class DbWrapper(object):
@@ -76,15 +77,16 @@ db = DbWrapper("neo4j://localhost:7687", "neo4j", "neo4j")
 
 db.delete_all_nodes_and_relationships()
 with open('/home/beth/share/share/PaperReferences.txt', 'r') as fp:
-    MAX_LINES = 1000
+    start_time = time.time()
+    MAX_LINES = 10000
     for linenum in range(MAX_LINES):
         line = fp.readline()
         if line == "":
             break
         else:
             val1, val2 = map(int, line.split('\t'))
-            print(val1)
-            print(val2)
+            #   print(val1)
+            #   print(val2)
             res = db.check_for_presence_in_database(val1)
             if len(res) == 0:
                 db.add_new_node_to_database(val1)
@@ -92,6 +94,17 @@ with open('/home/beth/share/share/PaperReferences.txt', 'r') as fp:
             if len(res) == 0:
                 db.add_new_node_to_database(val2)
             db.add_relationship_to_database(val1, val2)
+print("--- %s seconds ---" % (time.time() - start_time))
+
+# with open('/home/beth/share/share/PaperReferences.txt', 'r') as fp:
+#    f = open('/home/beth/share/share/First1000PaperReferences.txt', 'w')
+#    MAX_LINES = 1000
+#    for linenum in range(MAX_LINES):
+#        line = fp.readline()
+#        if line == "":
+#            break
+#        else:
+#            f.write(line)
 
 # result = db.query_movies_by_year(1992)
 # db.delete_all_nodes_and_relationships()
