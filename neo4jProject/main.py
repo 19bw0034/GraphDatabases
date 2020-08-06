@@ -74,9 +74,10 @@ class DbWrapper(object):
 db = DbWrapper("neo4j://localhost:7687", "neo4j", "neo4j")
 # example.load_dummy_data()
 
-
-with open('/home/beth/PycharmProjects/GraphDatabases/neo4jProject/DummyData.tsv', 'r') as fp:
-    while True:
+db.delete_all_nodes_and_relationships()
+with open('/home/beth/share/share/PaperReferences.txt', 'r') as fp:
+    MAX_LINES = 1000
+    for linenum in range(MAX_LINES):
         line = fp.readline()
         if line == "":
             break
