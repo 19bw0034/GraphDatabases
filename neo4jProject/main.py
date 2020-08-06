@@ -42,6 +42,10 @@ class DbWrapper(object):
     def query_all_actors_and_directors(self):
         return self.run_query("MATCH (a:Person) -[:DIRECTED]-> (c:Movie) RETURN a")
 
+    def query_most_directors(self, count):
+        return self.run_query("MATCH (a)-[:DIRECTED]->(b) RETURN a, COLLECT(b.title) as films, count(b) ORDER BY SIZE("
+                              "films) DESC LIMIT $count", count=count)
+
     # this one doesn't work - does not have a return type
     def delete_all_nodes_and_relationships(self):
         self.run_query("MATCH (n) DETACH DELETE n")
