@@ -75,30 +75,63 @@ class DbWrapper(object):
         return self.run_query("CREATE (a:Paper { id: $value})", value=value)
         # CREATE (a:Paper { id: 2})
 
+    def find_triangles(self):
+        return self.run_query("""CALL gds.alpha.triangles({
+ nodeProjection: "Library",
+ relationshipProjection: {
+ DEPENDS_ON: {
+ type: "DEPENDS_ON",
+ orientation: "UNDIRECTED"
+ }
+ }
+})
+YIELD nodeA, nodeB, nodeC
+RETURN gds.util.asNode(nodeA).id AS nodeA,
+ gds.util.asNode(nodeB).id AS nodeB,
+ gds.util.asNode(nodeC).id AS nodeC;
+""")
 
-db = DbWrapper("neo4j://localhost:7687", "neo4j", "neo4j")
+    def find_clustering_coefficient(self):
+        return self.run_query("""CALL gds.localClusteringCoefficient.stream({
+ nodeProjection: "Library",
+ relationshipProjection: {
+ DEPENDS_ON: {
+ type: "DEPENDS_ON",
+ orientation: "UNDIRECTED"
+ }
+ }
+})
+YIELD nodeId, localClusteringCoefficient
+WHERE localClusteringCoefficient > 0
+RETURN gds.util.asNode(nodeId).id AS library, localClusteringCoefficient
+ORDER BY localClusteringCoefficient DESC;
+""")
+
+
+db = DbWrapper("neo4j://localhost:7687", "neo4j", "password")
 # example.load_dummy_data()
 
-db.delete_all_nodes_and_relationships()
-with open('/home/beth/share/share/PaperReferences.txt', 'r') as fp:
-    start_time = time.time()
-    MAX_LINES = 10000
-    for linenum in range(MAX_LINES):
-        line = fp.readline()
-        if line == "":
-            break
-        else:
-            val1, val2 = map(int, line.split('\t'))
-            #   print(val1)
-            #   print(val2)
-            res = db.check_for_presence_in_database(val1)
-            if len(res) == 0:
-                db.add_new_node_to_database(val1)
-            res = db.check_for_presence_in_database(val2)
-            if len(res) == 0:
-                db.add_new_node_to_database(val2)
-            db.add_relationship_to_database(val1, val2)
-print("--- %s seconds ---" % (time.time() - start_time))
+db.find_triangles()
+db.find_clustering_coefficient()
+# with open('/home/beth/share/share/PaperReferences.txt', 'r') as fp:
+#   start_time = time.time()
+#  MAX_LINES = 10000
+# for linenum in range(MAX_LINES):
+#    line = fp.readline()
+#   if line == "":
+#      break
+#  else:
+#     val1, val2 = map(int, line.split('\t'))
+#    #   print(val1)
+#   #   print(val2)
+#      res = db.check_for_presence_in_database(val1)
+#     if len(res) == 0:
+#        db.add_new_node_to_database(val1)
+#   res = db.check_for_presence_in_database(val2)
+#  if len(res) == 0:
+#     db.add_new_node_to_database(val2)
+# db.add_relationship_to_database(val1, val2)
+# print("--- %s seconds ---" % (time.time() - start_time))
 
 # with open('/home/beth/share/share/PaperReferences.txt', 'r') as fp:
 #    f = open('/home/beth/share/share/First1000PaperReferences.txt', 'w')
