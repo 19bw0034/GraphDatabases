@@ -75,12 +75,12 @@ class DbWrapper(object):
         return self.run_query("CREATE (a:Paper { id: $value})", value=value)
         # CREATE (a:Paper { id: 2})
 
-    def find_triangles(self):
+    def find_all_triangles(self):
         return self.run_query("""CALL gds.alpha.triangles({
- nodeProjection: "Library",
+ nodeProjection: "*",
  relationshipProjection: {
  DEPENDS_ON: {
- type: "DEPENDS_ON",
+ type: "*",
  orientation: "UNDIRECTED"
  }
  }
@@ -93,10 +93,10 @@ RETURN gds.util.asNode(nodeA).id AS nodeA,
 
     def find_clustering_coefficient(self):
         return self.run_query("""CALL gds.localClusteringCoefficient.stream({
- nodeProjection: "Library",
+ nodeProjection: "*",
  relationshipProjection: {
  DEPENDS_ON: {
- type: "DEPENDS_ON",
+ type: "*",
  orientation: "UNDIRECTED"
  }
  }
@@ -107,11 +107,29 @@ RETURN gds.util.asNode(nodeId).id AS library, localClusteringCoefficient
 ORDER BY localClusteringCoefficient DESC;
 """)
 
+    def create_acted_with_relationships(self):
+        return self.run_query("""MATCH (a:Person) -[:ACTED_IN]->(:Movie)<-[:ACTED_IN]- (b:Person)
+MERGE (a) -[:ACTED_WITH]->(b)""")
+
+    def get_acted_with_triangles(self):
+        return self.run_query("""CALL gds.alpha.triangles({
+ nodeProjection: "Person",
+ relationshipProjection: {
+ ACTED_WITH: {
+ type: "ACTED_WITH",
+ orientation: "UNDIRECTED"
+ }
+ }
+})
+YIELD nodeA, nodeB, nodeC
+RETURN gds.util.asNode(nodeA).name AS nodeA,
+ gds.util.asNode(nodeB).name AS nodeB,
+ gds.util.asNode(nodeC).name AS nodeC;""")
 
 db = DbWrapper("neo4j://localhost:7687", "neo4j", "password")
 # example.load_dummy_data()
 
-db.find_triangles()
+db.find_all_triangles()
 db.find_clustering_coefficient()
 # with open('/home/beth/share/share/PaperReferences.txt', 'r') as fp:
 #   start_time = time.time()
